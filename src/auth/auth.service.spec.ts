@@ -17,6 +17,7 @@ describe('AuthService', () => {
     email: 'ramir@example.com',
     passwordHash: '',
     refreshTokenHash: null,
+    refreshTokenVersion: 0,
     age: 23,
     about: 'NestJS enjoyer',
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -35,6 +36,7 @@ describe('AuthService', () => {
       findByLoginWithPassword: jest.fn(),
       updateMe: jest.fn(),
       updateRefreshTokenHash: jest.fn(),
+      updateRefreshTokenState: jest.fn(),
       softDelete: jest.fn(),
     } as unknown as jest.Mocked<UsersService>;
 
@@ -78,7 +80,7 @@ describe('AuthService', () => {
     const result = await service.register({
       login: user.login,
       email: user.email,
-      password: 'StrongPass123',
+      password: 'StrongPass123!',
       age: user.age,
       about: user.about ?? undefined,
     });
@@ -86,9 +88,10 @@ describe('AuthService', () => {
     expect(result.accessToken).toBe('access-token');
     expect(result.refreshToken).toBe('refresh-token');
     expect(result.user).not.toHaveProperty('passwordHash');
-    expect(usersService.updateRefreshTokenHash).toHaveBeenCalledWith(
+    expect(usersService.updateRefreshTokenState).toHaveBeenCalledWith(
       user.id,
       expect.any(String),
+      1,
     );
   });
 
@@ -99,26 +102,26 @@ describe('AuthService', () => {
       service.register({
         login: user.login,
         email: user.email,
-        password: 'StrongPass123',
+        password: 'StrongPass123!',
         age: user.age,
       }),
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
   it('validates login and password', async () => {
-    const passwordHash = await bcrypt.hash('StrongPass123', 4);
+    const passwordHash = await bcrypt.hash('StrongPass123!', 4);
     usersService.findByLoginWithPassword.mockResolvedValue({
       ...user,
       passwordHash,
     } as never);
 
     await expect(
-      service.validateUser(user.login, 'StrongPass123'),
+      service.validateUser(user.login, 'StrongPass123!'),
     ).resolves.toMatchObject({ id: user.id });
   });
 
   it('rejects wrong password', async () => {
-    const passwordHash = await bcrypt.hash('StrongPass123', 4);
+    const passwordHash = await bcrypt.hash('StrongPass123!', 4);
     usersService.findByLoginWithPassword.mockResolvedValue({
       ...user,
       passwordHash,
@@ -134,6 +137,14 @@ describe('AuthService', () => {
     usersService.findByIdWithSecrets.mockResolvedValue({
       ...user,
       refreshTokenHash,
+      refreshTokenVersion: 1,
+    } as never);
+    jwtService.verifyAsync.mockResolvedValueOnce({
+      sub: user.id,
+      login: user.login,
+      email: user.email,
+      jti: 'refresh-jti',
+      tokenVersion: 1,
     } as never);
 
     const result = await service.refresh('refresh-token');

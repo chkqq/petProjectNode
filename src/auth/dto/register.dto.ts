@@ -27,10 +27,14 @@ export class RegisterDto {
   @MaxLength(255)
   email: string;
 
-  @ApiProperty({ example: 'StrongPass123', minLength: 8, maxLength: 128 })
+  @ApiProperty({ example: 'StrongPass123!', minLength: 8, maxLength: 128 })
   @IsString()
   @MinLength(8)
   @MaxLength(128)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/, {
+    message:
+      'password must contain at least one lowercase letter, one uppercase letter, one number and one special character',
+  })
   password: string;
 
   @ApiProperty({ example: 23, minimum: 0, maximum: 150 })

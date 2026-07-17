@@ -45,5 +45,10 @@ export interface UsersRepositoryPort {
     id: string,
     refreshTokenHash: string | null,
   ): Promise<void>;
+  updateRefreshTokenState(
+    id: string,
+    refreshTokenHash: string,
+    refreshTokenVersion: number,
+  ): Promise<void>;
   softDelete(id: string): Promise<void>;
 }

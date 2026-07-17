@@ -55,6 +55,7 @@ export function validateEnv(config: RawEnv): RawEnv {
     DB_PASSWORD: asString(config, 'DB_PASSWORD', 'pet_password'),
     DB_NAME: asString(config, 'DB_NAME', 'pet_project_node'),
     DB_SYNCHRONIZE: asBoolean(config, 'DB_SYNCHRONIZE', true),
+    DB_MIGRATIONS_RUN: asBoolean(config, 'DB_MIGRATIONS_RUN', false),
     JWT_ACCESS_SECRET: asString(
       config,
       'JWT_ACCESS_SECRET',

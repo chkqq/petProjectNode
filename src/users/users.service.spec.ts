@@ -19,6 +19,7 @@ describe('UsersService', () => {
     email: 'ramir@example.com',
     passwordHash: 'hash',
     refreshTokenHash: null,
+    refreshTokenVersion: 0,
     age: 23,
     about: 'NestJS enjoyer',
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -38,6 +39,7 @@ describe('UsersService', () => {
       findAll: jest.fn(),
       update: jest.fn(),
       updateRefreshTokenHash: jest.fn(),
+      updateRefreshTokenState: jest.fn(),
       softDelete: jest.fn(),
     };
 

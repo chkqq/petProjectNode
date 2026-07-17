@@ -8,7 +8,7 @@ export class LoginDto {
   @MaxLength(64)
   login: string;
 
-  @ApiProperty({ example: 'StrongPass123' })
+  @ApiProperty({ example: 'StrongPass123!' })
   @IsString()
   @MinLength(8)
   @MaxLength(128)

@@ -134,6 +134,18 @@ export class UsersService {
     return this.usersRepository.updateRefreshTokenHash(id, refreshTokenHash);
   }
 
+  updateRefreshTokenState(
+    id: string,
+    refreshTokenHash: string,
+    refreshTokenVersion: number,
+  ): Promise<void> {
+    return this.usersRepository.updateRefreshTokenState(
+      id,
+      refreshTokenHash,
+      refreshTokenVersion,
+    );
+  }
+
   async softDelete(id: string): Promise<void> {
     const user = await this.usersRepository.findById(id);
     if (!user) {

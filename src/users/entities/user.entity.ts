@@ -39,6 +39,13 @@ export class User {
   })
   refreshTokenHash: string | null;
 
+  @Column({
+    name: 'refresh_token_version',
+    type: 'int',
+    default: 0,
+  })
+  refreshTokenVersion: number;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

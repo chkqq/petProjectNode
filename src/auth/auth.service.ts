@@ -3,6 +3,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -83,6 +84,10 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token is not active');
     }
 
+    if (payload.tokenVersion !== user.refreshTokenVersion) {
+      throw new UnauthorizedException('Refresh token is outdated');
+    }
+
     const isRefreshTokenValid = await bcrypt.compare(
       refreshToken,
       user.refreshTokenHash,
@@ -100,10 +105,14 @@ export class AuthService {
   }
 
   private async issueAuthResponse(user: User): Promise<AuthResponseDto> {
+    const tokenId = randomUUID();
+    const nextRefreshTokenVersion = (user.refreshTokenVersion ?? 0) + 1;
     const payload: JwtPayload = {
       sub: user.id,
       login: user.login,
       email: user.email,
+      jti: tokenId,
+      tokenVersion: nextRefreshTokenVersion,
     };
     const accessTokenOptions: JwtSignOptions = {
       secret: this.configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
@@ -129,7 +138,11 @@ export class AuthService {
       refreshToken,
       this.configService.get<number>('BCRYPT_SALT_ROUNDS', 10),
     );
-    await this.usersService.updateRefreshTokenHash(user.id, refreshTokenHash);
+    await this.usersService.updateRefreshTokenState(
+      user.id,
+      refreshTokenHash,
+      nextRefreshTokenVersion,
+    );
 
     return {
       accessToken,

@@ -2,8 +2,6 @@
 
 REST API на NestJS для CRUD-профилей пользователей, регистрации, логина и JWT refresh/access токенов.
 
-Дополнительно в папке `frontend/` лежит простой demo-клиент на React + TypeScript + Tailwind, чтобы можно было показать работу API через интерфейс.
-
 ## Стек
 
 - NestJS
@@ -11,9 +9,10 @@ REST API на NestJS для CRUD-профилей пользователей, р
 - TypeORM
 - Passport + JWT
 - class-validator
+- Helmet
+- Rate limiting
 - Swagger
 - Jest
-- React + TypeScript + Tailwind для demo-frontend
 
 ## Быстрый запуск
 
@@ -21,6 +20,7 @@ REST API на NestJS для CRUD-профилей пользователей, р
 cp .env.example .env
 docker compose up -d
 npm install
+npm run migration:run
 npm run start:dev
 ```
 
@@ -30,24 +30,18 @@ Swagger: `http://localhost:3000/docs`.
 
 Подробный учебный разбор backend-кода: [`docs/backend-explanation.md`](docs/backend-explanation.md).
 
-Frontend запускается отдельно:
-
-```bash
-npm run frontend:install
-npm run frontend:dev
-```
-
-Demo UI: `http://localhost:5173`.
-
-Если backend запущен не на `http://localhost:3000/api`, создай `frontend/.env` по примеру `frontend/.env.example` и поменяй `VITE_API_URL`.
-
 ## Скрипты
 
 ```bash
+npm run db:up
+npm run db:down
+npm run db:logs
+npm run migration:run
+npm run migration:revert
+npm run test:e2e
 npm run build
 npm run start:dev
 npm test
-npm run frontend:build
 ```
 
 ## Основные роуты
@@ -62,6 +56,13 @@ npm run frontend:build
 - `PATCH /api/profile/my` — обновление текущего профиля
 - `DELETE /api/profile/my` — мягкое удаление текущего профиля
 
+Пароль должен содержать минимум 8 символов, включая:
+
+- строчную букву;
+- заглавную букву;
+- цифру;
+- спецсимвол.
+
 Защищённые роуты требуют заголовок:
 
 ```http
@@ -73,3 +74,17 @@ Authorization: Bearer <accessToken>
 ## Repository pattern
 
 Сервисы не обращаются напрямую к TypeORM `Repository`. Все обращения к БД проходят через `UsersRepositoryPort`, реализованный классом `TypeOrmUsersRepository`.
+
+## Миграции
+
+Сейчас проект использует миграции TypeORM.
+
+Основные команды:
+
+```bash
+npm run migration:run
+npm run migration:revert
+npm run migration:generate -- NameOfMigration
+```
+
+Для e2e-тестов нужна запущенная PostgreSQL через Docker Compose.

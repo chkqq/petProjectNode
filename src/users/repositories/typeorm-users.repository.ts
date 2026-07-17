@@ -23,6 +23,7 @@ export class TypeOrmUsersRepository implements UsersRepositoryPort {
       ...command,
       about: command.about ?? null,
       refreshTokenHash: null,
+      refreshTokenVersion: 0,
     });
   }
 
@@ -82,6 +83,17 @@ export class TypeOrmUsersRepository implements UsersRepositoryPort {
     refreshTokenHash: string | null,
   ): Promise<void> {
     await this.repository.update(id, { refreshTokenHash });
+  }
+
+  async updateRefreshTokenState(
+    id: string,
+    refreshTokenHash: string,
+    refreshTokenVersion: number,
+  ): Promise<void> {
+    await this.repository.update(id, {
+      refreshTokenHash,
+      refreshTokenVersion,
+    });
   }
 
   async softDelete(id: string): Promise<void> {
