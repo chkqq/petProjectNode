@@ -1,36 +1,50 @@
 # Pet Project Node API
 
-REST API на NestJS для CRUD-профилей пользователей, регистрации, логина и JWT refresh/access токенов.
+NestJS REST API for user profiles, JWT auth, PostgreSQL, MinIO avatars, Redis cache, Bull jobs and balance transfers.
 
-## Стек
+## Stack
 
 - NestJS
-- PostgreSQL в Docker Compose
+- PostgreSQL
 - TypeORM
+- typeorm-transactional
 - Passport + JWT
-- class-validator
-- Helmet
-- Rate limiting
-- Swagger
-- Jest
+- MinIO + S3 SDK
+- Redis
+- Bull
+- ESLint + Husky + lint-staged
+- React + TypeScript + Tailwind demo frontend
 
-## Быстрый запуск
+## Quick start
 
 ```bash
 cp .env.example .env
-docker compose up -d
 npm install
+npm run frontend:install
+npm run db:up
 npm run migration:run
 npm run start:dev
 ```
 
-API по умолчанию доступен на `http://localhost:3000/api`.
+Frontend:
 
-Swagger: `http://localhost:3000/docs`.
+```bash
+npm run frontend:dev
+```
 
-Подробный учебный разбор backend-кода: [`docs/backend-explanation.md`](docs/backend-explanation.md).
+URLs:
 
-## Скрипты
+- API: `http://localhost:3000/api`
+- Swagger: `http://localhost:3000/docs`
+- Frontend: `http://localhost:5173`
+- MinIO console: `http://localhost:9001`
+
+MinIO dev credentials:
+
+- login: `minioadmin`
+- password: `minioadmin`
+
+## Scripts
 
 ```bash
 npm run db:up
@@ -38,53 +52,56 @@ npm run db:down
 npm run db:logs
 npm run migration:run
 npm run migration:revert
-npm run test:e2e
+npm run lint
+npm run lint:fix
+npm run lint:watch
 npm run build
-npm run start:dev
 npm test
+npm run test:e2e
+npm run frontend:build
 ```
 
-## Основные роуты
+## Main routes
 
-- `POST /api/auth/register` — регистрация, возвращает `accessToken` и `refreshToken`
-- `POST /api/auth/login` — вход по `login` + `password`, возвращает новую пару токенов
-- `POST /api/auth/refresh` — обновление пары токенов по refresh-токену
-- `POST /api/auth/logout` — удаление refresh-токена текущего пользователя
-- `GET /api/profile/my` — профиль текущего пользователя без `:id`
-- `GET /api/profile?page=1&limit=10&login=ram` — список пользователей с пагинацией и поиском по логину
-- `GET /api/profile/:id` — профиль пользователя по id
-- `PATCH /api/profile/my` — обновление текущего профиля
-- `DELETE /api/profile/my` — мягкое удаление текущего профиля
+Auth:
 
-Пароль должен содержать минимум 8 символов, включая:
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/refresh`
+- `POST /api/auth/logout`
 
-- строчную букву;
-- заглавную букву;
-- цифру;
-- спецсимвол.
+Profiles:
 
-Защищённые роуты требуют заголовок:
+- `GET /api/profile/my`
+- `PATCH /api/profile/my`
+- `DELETE /api/profile/my`
+- `GET /api/profile?page=1&limit=10&login=ram`
+- `GET /api/profile/active?minAge=18&maxAge=35`
+- `GET /api/profile/:id`
 
-```http
-Authorization: Bearer <accessToken>
-```
+Avatars:
 
-Если access-токен истёк, защищённые роуты возвращают `401`; новую пару токенов нужно получить через `/api/auth/refresh`.
+- `POST /api/profile/my/avatars`
+- `GET /api/profile/my/avatars`
+- `DELETE /api/profile/my/avatars/:id`
 
-## Repository pattern
+Balances:
 
-Сервисы не обращаются напрямую к TypeORM `Repository`. Все обращения к БД проходят через `UsersRepositoryPort`, реализованный классом `TypeOrmUsersRepository`.
+- `POST /api/balances/transfer`
+- `POST /api/balance-reset`
 
-## Миграции
+## Notes
 
-Сейчас проект использует миграции TypeORM.
+- Password must contain at least 8 characters, one lowercase letter, one uppercase letter, one number and one special character.
+- Avatars must be JPEG or PNG and less than 10 MB.
+- A user can have up to 5 active avatars.
+- `GET /profile` and `GET /profile/:id` are cached in Redis for 30 seconds.
+- Balance transfer uses a DB transaction.
+- Balance reset is queued through Bull and also scheduled every 10 minutes.
+- Services access the database through repository ports.
 
-Основные команды:
+## Docs
 
-```bash
-npm run migration:run
-npm run migration:revert
-npm run migration:generate -- NameOfMigration
-```
-
-Для e2e-тестов нужна запущенная PostgreSQL через Docker Compose.
+- `docs/mvp-2-backend-guide.md`
+- `docs/mvp-2-code-walkthrough.md`
+- `docs/mvp-2-questions.md`

@@ -4,8 +4,14 @@ import { Test } from '@nestjs/testing';
 import { Client } from 'pg';
 import * as request from 'supertest';
 import { DataSource } from 'typeorm';
+import {
+  initializeTransactionalContext,
+  StorageDriver,
+} from 'typeorm-transactional';
 
 import { setupApp } from '../src/app.setup';
+
+jest.setTimeout(60_000);
 
 const TEST_RUN_ID = randomUUID().replace(/-/g, '').slice(0, 8);
 const TEST_DB_NAME = `pet_project_node_e2e_${TEST_RUN_ID}`;
@@ -42,6 +48,8 @@ describe('API e2e', () => {
   let dataSource: DataSource;
 
   beforeAll(async () => {
+    initializeTransactionalContext({ storageDriver: StorageDriver.AUTO });
+
     process.env.DB_HOST = process.env.DB_HOST ?? 'localhost';
     process.env.DB_PORT = process.env.DB_PORT ?? '5433';
     process.env.DB_USERNAME = process.env.DB_USERNAME ?? 'pet_user';

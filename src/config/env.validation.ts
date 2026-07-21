@@ -69,5 +69,28 @@ export function validateEnv(config: RawEnv): RawEnv {
     JWT_ACCESS_TTL: asString(config, 'JWT_ACCESS_TTL', '15m'),
     JWT_REFRESH_TTL: asString(config, 'JWT_REFRESH_TTL', '7d'),
     BCRYPT_SALT_ROUNDS: asInteger(config, 'BCRYPT_SALT_ROUNDS', 10),
+    MINIO_ENDPOINT: asString(config, 'MINIO_ENDPOINT', 'http://localhost:9000'),
+    MINIO_PUBLIC_URL: asString(
+      config,
+      'MINIO_PUBLIC_URL',
+      'http://localhost:9000',
+    ),
+    MINIO_REGION: asString(config, 'MINIO_REGION', 'us-east-1'),
+    MINIO_ACCESS_KEY: asString(config, 'MINIO_ACCESS_KEY', 'minioadmin'),
+    MINIO_SECRET_KEY: asString(config, 'MINIO_SECRET_KEY', 'minioadmin'),
+    MINIO_BUCKET: asString(config, 'MINIO_BUCKET', 'avatars'),
+    REDIS_HOST: asString(config, 'REDIS_HOST', 'localhost'),
+    REDIS_PORT: asInteger(config, 'REDIS_PORT', 6379),
+    REDIS_PASSWORD: asString(config, 'REDIS_PASSWORD', ''),
+    REDIS_CACHE_TTL_SECONDS: asInteger(
+      config,
+      'REDIS_CACHE_TTL_SECONDS',
+      30,
+    ),
+    BALANCE_RESET_REPEAT_MS: asInteger(
+      config,
+      'BALANCE_RESET_REPEAT_MS',
+      600000,
+    ),
   };
 }

@@ -36,3 +36,40 @@ export interface PaginatedUsersResponse {
     totalPages: number;
   };
 }
+
+export interface Avatar {
+  id: string;
+  fileName: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  url: string;
+  createdAt: string;
+}
+
+export interface ActiveUser {
+  id: string;
+  login: string;
+  email: string;
+  age: number;
+  balance: string;
+  about: string | null;
+  activeAvatarsCount: number;
+  latestAvatar: Avatar | null;
+}
+
+export interface TransferBalanceRequest {
+  toUserId: string;
+  amount: string;
+}
+
+export interface TransferBalanceResponse {
+  amount: string;
+  from: User;
+  to: User;
+}
+
+export interface BalanceResetResponse {
+  message: string;
+  jobId: string;
+}

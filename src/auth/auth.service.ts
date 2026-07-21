@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
@@ -17,6 +18,8 @@ import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
@@ -24,6 +27,7 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthResponseDto> {
+    this.logger.log(`Register attempt for login=${dto.login}`);
     const loginCandidate = await this.usersService.findByLogin(dto.login);
     if (loginCandidate) {
       throw new ConflictException('User with this login already exists');
@@ -46,10 +50,12 @@ export class AuthService {
       about: dto.about,
     });
 
+    this.logger.log(`User ${user.id} registered`);
     return this.issueAuthResponse(user);
   }
 
   async validateUser(login: string, password: string): Promise<User> {
+    this.logger.log(`Login validation attempt for login=${login}`);
     const user = await this.usersService.findByLoginWithPassword(login);
 
     if (!user) {
@@ -65,10 +71,12 @@ export class AuthService {
   }
 
   login(user: User): Promise<AuthResponseDto> {
+    this.logger.log(`Issuing tokens for user ${user.id}`);
     return this.issueAuthResponse(user);
   }
 
   async refresh(refreshToken: string): Promise<AuthResponseDto> {
+    this.logger.log('Refresh token attempt');
     let payload: JwtPayload;
 
     try {
@@ -96,10 +104,12 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
+    this.logger.log(`Refresh token accepted for user ${user.id}`);
     return this.issueAuthResponse(user);
   }
 
   async logout(userId: string): Promise<{ message: string }> {
+    this.logger.log(`Logout for user ${userId}`);
     await this.usersService.updateRefreshTokenHash(userId, null);
     return { message: 'Logged out' };
   }
@@ -143,6 +153,7 @@ export class AuthService {
       refreshTokenHash,
       nextRefreshTokenVersion,
     );
+    this.logger.log(`Token pair issued for user ${user.id}`);
 
     return {
       accessToken,

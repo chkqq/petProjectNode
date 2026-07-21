@@ -22,7 +22,9 @@ import {
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RequestUser } from '../auth/interfaces/request-user.interface';
+import { ActiveUserResponseDto } from './dto/active-user-response.dto';
 import { PaginatedUsersResponseDto } from './dto/paginated-users-response.dto';
+import { QueryActiveUsersDto } from './dto/query-active-users.dto';
 import { QueryUsersDto } from './dto/query-users.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
@@ -62,6 +64,14 @@ export class UsersController {
   @ApiOkResponse({ type: PaginatedUsersResponseDto })
   findAll(@Query() query: QueryUsersDto): Promise<PaginatedUsersResponseDto> {
     return this.usersService.findAll(query);
+  }
+
+  @Get('active')
+  @ApiOkResponse({ type: [ActiveUserResponseDto] })
+  findActiveUsers(
+    @Query() query: QueryActiveUsersDto,
+  ): Promise<ActiveUserResponseDto[]> {
+    return this.usersService.findActiveUsers(query);
   }
 
   @Get(':id')

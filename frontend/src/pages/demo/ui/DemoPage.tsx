@@ -1,20 +1,24 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
-import { api, clearTokens, getAccessToken, getRefreshToken } from '../../../shared/api/client';
 import type { User } from '../../../entities/user/model/types';
+import type { AuthMode, UserFormState } from '../../../features/user-form/model/types';
+import { api, clearTokens, getAccessToken, getRefreshToken } from '../../../shared/api/client';
+import type { ActiveUser, Avatar } from '../../../shared/api/types';
 import { assertStrongPassword } from '../../../shared/lib/password';
-import { DemoHeader } from '../../../widgets/demo-header/ui/DemoHeader';
+import { ActiveUsersPanel } from '../../../widgets/active-users-panel/ui/ActiveUsersPanel';
 import { AuthPanel } from '../../../widgets/auth-panel/ui/AuthPanel';
+import { AvatarsPanel } from '../../../widgets/avatars-panel/ui/AvatarsPanel';
+import { BalancePanel } from '../../../widgets/balance-panel/ui/BalancePanel';
+import { DemoHeader } from '../../../widgets/demo-header/ui/DemoHeader';
 import { ProfilePanel } from '../../../widgets/profile-panel/ui/ProfilePanel';
 import { UsersPanel } from '../../../widgets/users-panel/ui/UsersPanel';
-import type { AuthMode, UserFormState } from '../../../features/user-form/model/types';
 
 const initialForm: UserFormState = {
   login: 'demo_user',
   email: 'demo@example.com',
   password: 'StrongPass123!',
   age: '23',
-  about: 'Люблю NestJS, PostgreSQL и понятные демки.',
+  about: 'I like NestJS, PostgreSQL and clear demos.',
 };
 
 export function DemoPage() {
@@ -23,10 +27,16 @@ export function DemoPage() {
   const [profileForm, setProfileForm] = useState<UserFormState>(initialForm);
   const [me, setMe] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
+  const [avatars, setAvatars] = useState<Avatar[]>([]);
+  const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loginFilter, setLoginFilter] = useState('');
-  const [status, setStatus] = useState('Готов к демонстрации API.');
+  const [activeMinAge, setActiveMinAge] = useState('18');
+  const [activeMaxAge, setActiveMaxAge] = useState('35');
+  const [transferToUserId, setTransferToUserId] = useState('');
+  const [transferAmount, setTransferAmount] = useState('1.00');
+  const [status, setStatus] = useState('Ready to demo the API.');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -35,6 +45,7 @@ export function DemoPage() {
   useEffect(() => {
     if (getAccessToken()) {
       void loadMe();
+      void loadAvatars();
     }
   }, []);
 
@@ -58,9 +69,7 @@ export function DemoPage() {
       await action();
     } catch (caughtError) {
       setError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : 'Что-то пошло не так',
+        caughtError instanceof Error ? caughtError.message : 'Something went wrong',
       );
     } finally {
       setLoading(false);
@@ -71,7 +80,7 @@ export function DemoPage() {
     await runAction(async () => {
       const profile = await api.me();
       setMe(profile);
-      setStatus(`Профиль ${profile.login} загружен.`);
+      setStatus(`Profile ${profile.login} loaded.`);
     });
   }
 
@@ -85,7 +94,26 @@ export function DemoPage() {
       setUsers(response.items);
       setPage(response.meta.page);
       setTotalPages(response.meta.totalPages);
-      setStatus(`Пользователи загружены: ${response.meta.total}.`);
+      setStatus(`Users loaded: ${response.meta.total}.`);
+    });
+  }
+
+  async function loadAvatars() {
+    await runAction(async () => {
+      const response = await api.avatars();
+      setAvatars(response);
+      setStatus(`Avatars loaded: ${response.length}.`);
+    });
+  }
+
+  async function loadActiveUsers() {
+    await runAction(async () => {
+      const response = await api.activeUsers({
+        minAge: Number(activeMinAge),
+        maxAge: Number(activeMaxAge),
+      });
+      setActiveUsers(response);
+      setStatus(`Active users loaded: ${response.length}.`);
     });
   }
 
@@ -122,10 +150,12 @@ export function DemoPage() {
 
       setMe(response.user);
       setUsers([]);
+      setActiveUsers([]);
+      await loadAvatars();
       setStatus(
         mode === 'register'
-          ? 'Регистрация прошла успешно, токены сохранены.'
-          : 'Логин успешный, получена новая пара токенов.',
+          ? 'Registration completed, tokens saved.'
+          : 'Login completed, new token pair received.',
       );
     });
   }
@@ -148,7 +178,7 @@ export function DemoPage() {
 
       const updatedProfile = await api.updateMe(payload);
       setMe(updatedProfile);
-      setStatus('Профиль обновлён через PATCH /profile/my.');
+      setStatus('Profile updated through PATCH /profile/my.');
     });
   }
 
@@ -157,13 +187,15 @@ export function DemoPage() {
       await api.logout();
       setMe(null);
       setUsers([]);
-      setStatus('Вы вышли из системы, токены удалены из localStorage.');
+      setAvatars([]);
+      setActiveUsers([]);
+      setStatus('Logged out, tokens removed from localStorage.');
     });
   }
 
   async function handleDeleteProfile() {
     const confirmed = window.confirm(
-      'Удалить текущий профиль? На backend будет soft-delete.',
+      'Delete current profile? Backend will perform soft-delete.',
     );
 
     if (!confirmed) {
@@ -175,7 +207,45 @@ export function DemoPage() {
       clearTokens();
       setMe(null);
       setUsers([]);
-      setStatus('Профиль мягко удалён, локальные токены очищены.');
+      setAvatars([]);
+      setActiveUsers([]);
+      setStatus('Profile soft-deleted, local tokens cleared.');
+    });
+  }
+
+  async function handleAvatarUpload(file: File) {
+    await runAction(async () => {
+      const avatar = await api.uploadAvatar(file);
+      setAvatars((current) => [avatar, ...current]);
+      setStatus(`Avatar ${avatar.originalName} uploaded.`);
+    });
+  }
+
+  async function handleAvatarDelete(id: string) {
+    await runAction(async () => {
+      await api.deleteAvatar(id);
+      setAvatars((current) => current.filter((avatar) => avatar.id !== id));
+      setStatus('Avatar soft-deleted.');
+    });
+  }
+
+  async function handleTransferBalance() {
+    await runAction(async () => {
+      const response = await api.transferBalance({
+        toUserId: transferToUserId.trim(),
+        amount: transferAmount.trim(),
+      });
+      setMe(response.from);
+      setStatus(
+        `Transfer $${response.amount} completed. New balance: $${response.from.balance}.`,
+      );
+    });
+  }
+
+  async function handleResetBalances() {
+    await runAction(async () => {
+      const response = await api.resetBalances();
+      setStatus(`${response.message}. Job id: ${response.jobId}.`);
     });
   }
 
@@ -183,9 +253,9 @@ export function DemoPage() {
     <main className="min-h-screen bg-slate-950 text-slate-100">
       <section className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-5 py-8 sm:px-8 lg:py-12">
         <DemoHeader
-          accessTokenStatus={getAccessToken() ? 'сохранён в localStorage' : 'нет'}
-          refreshTokenStatus={getRefreshToken() ? 'сохранён и ротируется' : 'нет'}
-          securityStatus="rate limit + strong password"
+          accessTokenStatus={getAccessToken() ? 'saved in localStorage' : 'empty'}
+          refreshTokenStatus={getRefreshToken() ? 'saved and rotated' : 'empty'}
+          securityStatus="rate limit + strong password + cache"
         />
 
         <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
@@ -211,6 +281,29 @@ export function DemoPage() {
           />
         </section>
 
+        <section className="grid gap-6 lg:grid-cols-2">
+          <AvatarsPanel
+            avatars={avatars}
+            loading={loading}
+            isAuthorized={isAuthorized}
+            onUpload={handleAvatarUpload}
+            onDelete={handleAvatarDelete}
+            onReload={loadAvatars}
+          />
+
+          <BalancePanel
+            me={me}
+            toUserId={transferToUserId}
+            amount={transferAmount}
+            loading={loading}
+            isAuthorized={isAuthorized}
+            onToUserIdChange={setTransferToUserId}
+            onAmountChange={setTransferAmount}
+            onTransfer={handleTransferBalance}
+            onResetBalances={handleResetBalances}
+          />
+        </section>
+
         <UsersPanel
           users={users}
           page={page}
@@ -220,6 +313,17 @@ export function DemoPage() {
           isAuthorized={isAuthorized}
           onLoginFilterChange={setLoginFilter}
           onLoadUsers={loadUsers}
+        />
+
+        <ActiveUsersPanel
+          users={activeUsers}
+          minAge={activeMinAge}
+          maxAge={activeMaxAge}
+          loading={loading}
+          isAuthorized={isAuthorized}
+          onMinAgeChange={setActiveMinAge}
+          onMaxAgeChange={setActiveMaxAge}
+          onLoad={loadActiveUsers}
         />
 
         {(status || error) && (

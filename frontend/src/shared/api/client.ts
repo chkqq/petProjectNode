@@ -1,8 +1,13 @@
 import type {
+  ActiveUser,
   AuthResponse,
+  Avatar,
+  BalanceResetResponse,
   LoginRequest,
   PaginatedUsersResponse,
   RegisterRequest,
+  TransferBalanceRequest,
+  TransferBalanceResponse,
   UpdateProfileRequest,
 } from './types';
 import type { User } from '../../entities/user/model/types';
@@ -31,7 +36,7 @@ export function clearTokens(): void {
 
 async function parseError(response: Response): Promise<string> {
   if (response.status === 429) {
-    return 'Слишком много запросов. Подожди около минуты и попробуй снова.';
+    return 'Too many requests. Wait about a minute and try again.';
   }
 
   try {
@@ -78,8 +83,9 @@ async function apiFetch<T>(
 ): Promise<T> {
   const headers = new Headers(options.headers);
   const token = getAccessToken();
+  const isFormData = options.body instanceof FormData;
 
-  if (!headers.has('Content-Type') && options.body) {
+  if (!headers.has('Content-Type') && options.body && !isFormData) {
     headers.set('Content-Type', 'application/json');
   }
 
@@ -152,6 +158,15 @@ export const api = {
     return apiFetch<PaginatedUsersResponse>(`/profile?${search.toString()}`);
   },
 
+  activeUsers: (params: { minAge: number; maxAge: number }) => {
+    const search = new URLSearchParams({
+      minAge: String(params.minAge),
+      maxAge: String(params.maxAge),
+    });
+
+    return apiFetch<ActiveUser[]>(`/profile/active?${search.toString()}`);
+  },
+
   updateMe: (payload: UpdateProfileRequest) =>
     apiFetch<User>('/profile/my', {
       method: 'PATCH',
@@ -159,4 +174,30 @@ export const api = {
     }),
 
   deleteMe: () => apiFetch<void>('/profile/my', { method: 'DELETE' }),
+
+  avatars: () => apiFetch<Avatar[]>('/profile/my/avatars'),
+
+  uploadAvatar: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return apiFetch<Avatar>('/profile/my/avatars', {
+      method: 'POST',
+      body: formData,
+    });
+  },
+
+  deleteAvatar: (id: string) =>
+    apiFetch<void>(`/profile/my/avatars/${id}`, { method: 'DELETE' }),
+
+  transferBalance: (payload: TransferBalanceRequest) =>
+    apiFetch<TransferBalanceResponse>('/balances/transfer', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  resetBalances: () =>
+    apiFetch<BalanceResetResponse>('/balance-reset', {
+      method: 'POST',
+    }),
 };

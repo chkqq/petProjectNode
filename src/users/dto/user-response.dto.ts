@@ -21,6 +21,9 @@ export class UserResponseDto {
   })
   about: string | null;
 
+  @ApiProperty({ example: '20.51' })
+  balance: string;
+
   @ApiProperty({ example: '2026-01-01T00:00:00.000Z' })
   createdAt: Date;
 
@@ -37,6 +40,7 @@ export class UserResponseDto {
       email: user.email,
       age: user.age,
       about: user.about,
+      balance: user.balance,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       deletedAt: user.deletedAt,

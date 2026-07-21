@@ -28,20 +28,19 @@ export function UsersPanel({
   return (
     <section className="grid gap-6 lg:grid-cols-[0.75fr_1.25fr]">
       <Card>
-        <h2 className="text-2xl font-bold">Список пользователей</h2>
+        <h2 className="text-2xl font-bold">Users list</h2>
         <p className="mt-2 text-sm text-slate-400">
-          Только для авторизованных. Если access token истёк, frontend
-          автоматически попробует обновить пару токенов через refresh.
+          Protected endpoint with pagination, login filter and Redis cache.
         </p>
         <div className="mt-6 space-y-4">
           <TextField
-            label="Поиск по логину"
+            label="Search by login"
             placeholder="demo"
             value={loginFilter}
             onChange={onLoginFilterChange}
           />
           <Button disabled={loading || !isAuthorized} onClick={() => onLoadUsers(1)}>
-            Загрузить пользователей
+            Load users
           </Button>
           <div className="flex gap-2">
             <Button
@@ -49,18 +48,18 @@ export function UsersPanel({
               disabled={loading || page <= 1}
               onClick={() => onLoadUsers(page - 1)}
             >
-              Назад
+              Previous
             </Button>
             <Button
               variant="secondary"
               disabled={loading || page >= totalPages}
               onClick={() => onLoadUsers(page + 1)}
             >
-              Вперёд
+              Next
             </Button>
           </div>
           <p className="text-sm text-slate-400">
-            Страница {page} из {totalPages}
+            Page {page} of {totalPages}
           </p>
         </div>
       </Card>
@@ -84,19 +83,21 @@ export function UsersPanel({
                   <div>
                     <h3 className="font-bold text-white">@{user.login}</h3>
                     <p className="text-sm text-slate-400">{user.email}</p>
+                    <p className="text-sm text-emerald-200">${user.balance}</p>
                   </div>
                   <span className="rounded-full bg-violet-400/10 px-3 py-1 text-sm text-violet-200">
                     {user.age}
                   </span>
                 </div>
                 <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-300">
-                  {user.about || 'Описание не указано.'}
+                  {user.about || 'No description.'}
                 </p>
+                <p className="mt-3 break-all text-xs text-slate-500">{user.id}</p>
               </article>
             ))}
           </div>
         ) : (
-          <EmptyState text="Нажми «Загрузить пользователей», когда будешь авторизован." />
+          <EmptyState text="Click Load users after login." />
         )}
       </Card>
     </section>

@@ -18,6 +18,7 @@ describe('AuthService', () => {
     passwordHash: '',
     refreshTokenHash: null,
     refreshTokenVersion: 0,
+    balance: '0.00',
     age: 23,
     about: 'NestJS enjoyer',
     createdAt: new Date('2026-01-01T00:00:00.000Z'),

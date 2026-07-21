@@ -18,6 +18,11 @@ export interface UpdateUserCommand {
   about?: string | null;
 }
 
+export interface FindActiveUsersParams {
+  minAge: number;
+  maxAge: number;
+}
+
 export interface FindAllUsersParams {
   page: number;
   limit: number;
@@ -31,6 +36,29 @@ export interface PaginatedUsers {
   limit: number;
 }
 
+export interface LatestAvatarProjection {
+  id: string;
+  fileName: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  createdAt: Date;
+}
+
+export interface ActiveUserProjection {
+  id: string;
+  login: string;
+  email: string;
+  age: number;
+  about: string | null;
+  balance: string;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date | null;
+  activeAvatarsCount: number;
+  latestAvatar: LatestAvatarProjection | null;
+}
+
 export interface UsersRepositoryPort {
   create(command: CreateUserCommand): User;
   save(user: User): Promise<User>;
@@ -40,7 +68,11 @@ export interface UsersRepositoryPort {
   findByLoginWithPassword(login: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
   findAll(params: FindAllUsersParams): Promise<PaginatedUsers>;
+  findActiveUsers(params: FindActiveUsersParams): Promise<ActiveUserProjection[]>;
+  findByIdForUpdate(id: string): Promise<User | null>;
   update(id: string, command: UpdateUserCommand): Promise<User | null>;
+  updateBalance(id: string, balance: string): Promise<void>;
+  resetAllBalances(): Promise<number>;
   updateRefreshTokenHash(
     id: string,
     refreshTokenHash: string | null,
