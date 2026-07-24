@@ -201,10 +201,15 @@ export class UsersService {
       age: dto.age,
       about: dto.about,
       passwordHash,
+      refreshTokenHash: dto.password ? null : undefined,
     });
 
     if (!updatedUser) {
       throw new NotFoundException('User not found');
+    }
+
+    if (dto.password) {
+      this.logger.log(`Refresh token was revoked after password change ${id}`);
     }
 
     await this.invalidateUsersCache(id);

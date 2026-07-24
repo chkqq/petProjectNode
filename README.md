@@ -95,6 +95,8 @@ Balances:
 - Password must contain at least 8 characters, one lowercase letter, one uppercase letter, one number and one special character.
 - Avatars must be JPEG or PNG and less than 10 MB.
 - A user can have up to 5 active avatars.
+- Soft-deleted users free up their login and email for new registration.
+- Changing password revokes the current refresh session.
 - `GET /profile` and `GET /profile/:id` are cached in Redis for 30 seconds.
 - Balance transfer uses a DB transaction.
 - Balance reset is queued through Bull and also scheduled every 10 minutes.

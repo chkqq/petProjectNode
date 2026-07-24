@@ -1,11 +1,17 @@
 type RawEnv = Record<string, unknown>;
 
-const DEFAULT_ACCESS_SECRET = 'local_access_secret_change_me_32_chars';
-const DEFAULT_REFRESH_SECRET = 'local_refresh_secret_change_me_32_chars';
-
 function asString(config: RawEnv, key: string, defaultValue: string): string {
   const value = config[key];
   return typeof value === 'string' && value.trim() !== '' ? value : defaultValue;
+}
+
+function requiredString(config: RawEnv, key: string): string {
+  const value = config[key];
+  if (typeof value === 'string' && value.trim() !== '') {
+    return value;
+  }
+
+  throw new Error(`Missing required environment variable: ${key}`);
 }
 
 function asInteger(config: RawEnv, key: string, defaultValue: number): number {
@@ -56,16 +62,8 @@ export function validateEnv(config: RawEnv): RawEnv {
     DB_NAME: asString(config, 'DB_NAME', 'pet_project_node'),
     DB_SYNCHRONIZE: asBoolean(config, 'DB_SYNCHRONIZE', true),
     DB_MIGRATIONS_RUN: asBoolean(config, 'DB_MIGRATIONS_RUN', false),
-    JWT_ACCESS_SECRET: asString(
-      config,
-      'JWT_ACCESS_SECRET',
-      DEFAULT_ACCESS_SECRET,
-    ),
-    JWT_REFRESH_SECRET: asString(
-      config,
-      'JWT_REFRESH_SECRET',
-      DEFAULT_REFRESH_SECRET,
-    ),
+    JWT_ACCESS_SECRET: requiredString(config, 'JWT_ACCESS_SECRET'),
+    JWT_REFRESH_SECRET: requiredString(config, 'JWT_REFRESH_SECRET'),
     JWT_ACCESS_TTL: asString(config, 'JWT_ACCESS_TTL', '15m'),
     JWT_REFRESH_TTL: asString(config, 'JWT_REFRESH_TTL', '7d'),
     BCRYPT_SALT_ROUNDS: asInteger(config, 'BCRYPT_SALT_ROUNDS', 10),

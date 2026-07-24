@@ -1,5 +1,6 @@
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { createHash } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 
@@ -134,7 +135,9 @@ describe('AuthService', () => {
   });
 
   it('refreshes tokens when refresh token matches stored hash', async () => {
-    const refreshTokenHash = await bcrypt.hash('refresh-token', 4);
+    const refreshTokenHash = createHash('sha256')
+      .update('refresh-token')
+      .digest('hex');
     usersService.findByIdWithSecrets.mockResolvedValue({
       ...user,
       refreshTokenHash,

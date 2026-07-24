@@ -12,8 +12,14 @@ import {
 import { Avatar } from '../../avatars/entities/avatar.entity';
 
 @Entity('users')
-@Index('idx_users_login_unique', ['login'], { unique: true })
-@Index('idx_users_email_unique', ['email'], { unique: true })
+@Index('idx_users_login_unique_active', ['login'], {
+  unique: true,
+  where: '"deleted_at" IS NULL',
+})
+@Index('idx_users_email_unique_active', ['email'], {
+  unique: true,
+  where: '"deleted_at" IS NULL',
+})
 @Index('idx_users_age', ['age'])
 export class User {
   @PrimaryGeneratedColumn('uuid')

@@ -4,7 +4,7 @@ import {
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
-import { randomUUID } from 'crypto';
+import { createHash, randomUUID, timingSafeEqual } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -96,7 +96,7 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token is outdated');
     }
 
-    const isRefreshTokenValid = await bcrypt.compare(
+    const isRefreshTokenValid = this.isRefreshTokenHashValid(
       refreshToken,
       user.refreshTokenHash,
     );
@@ -144,10 +144,7 @@ export class AuthService {
       this.jwtService.signAsync(payload, refreshTokenOptions),
     ]);
 
-    const refreshTokenHash = await bcrypt.hash(
-      refreshToken,
-      this.configService.get<number>('BCRYPT_SALT_ROUNDS', 10),
-    );
+    const refreshTokenHash = this.hashRefreshToken(refreshToken);
     await this.usersService.updateRefreshTokenState(
       user.id,
       refreshTokenHash,
@@ -160,5 +157,22 @@ export class AuthService {
       refreshToken,
       user: UserResponseDto.fromEntity(user),
     };
+  }
+
+  private hashRefreshToken(refreshToken: string): string {
+    return createHash('sha256').update(refreshToken).digest('hex');
+  }
+
+  private isRefreshTokenHashValid(
+    refreshToken: string,
+    refreshTokenHash: string,
+  ): boolean {
+    const incomingHash = Buffer.from(this.hashRefreshToken(refreshToken), 'hex');
+    const storedHash = Buffer.from(refreshTokenHash, 'hex');
+
+    return (
+      incomingHash.length === storedHash.length &&
+      timingSafeEqual(incomingHash, storedHash)
+    );
   }
 }

@@ -4,6 +4,7 @@ import { DataSource } from 'typeorm';
 import { Avatar } from '../avatars/entities/avatar.entity';
 import { validateEnv } from '../config/env.validation';
 import { User } from '../users/entities/user.entity';
+import { UsePartialUniqueIndexesForUsers1740000000000 } from './migrations/1740000000000-UsePartialUniqueIndexesForUsers';
 import { AddAvatarsAndBalances1730000000000 } from './migrations/1730000000000-AddAvatarsAndBalances';
 import { InitialUsers1720000000000 } from './migrations/1720000000000-InitialUsers';
 
@@ -22,6 +23,7 @@ export default new DataSource({
   migrations: [
     InitialUsers1720000000000,
     AddAvatarsAndBalances1730000000000,
+    UsePartialUniqueIndexesForUsers1740000000000,
   ],
   synchronize: false,
 });

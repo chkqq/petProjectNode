@@ -114,6 +114,18 @@ describe('UsersService', () => {
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
+  it('revokes refresh token when password changes', async () => {
+    repository.findById.mockResolvedValue(user);
+    repository.update.mockResolvedValue({ ...user, passwordHash: 'new-hash' });
+
+    await service.updateMe(user.id, { password: 'NewStrongPass123!' });
+
+    expect(repository.update).toHaveBeenCalledWith(
+      user.id,
+      expect.objectContaining({ refreshTokenHash: null }),
+    );
+  });
+
   it('soft deletes user and clears refresh token', async () => {
     repository.findById.mockResolvedValue(user);
 

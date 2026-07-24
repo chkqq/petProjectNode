@@ -14,6 +14,7 @@ export interface UpdateUserCommand {
   login?: string;
   email?: string;
   passwordHash?: string;
+  refreshTokenHash?: string | null;
   age?: number;
   about?: string | null;
 }
