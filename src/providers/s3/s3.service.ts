@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   CreateBucketCommand,
+  DeleteObjectCommand,
   HeadBucketCommand,
   PutBucketPolicyCommand,
   PutObjectCommand,
@@ -57,6 +58,16 @@ export class S3Service implements OnModuleInit {
         Key: params.key,
         Body: params.buffer,
         ContentType: params.contentType,
+      }),
+    );
+  }
+
+  async deleteObject(key: string): Promise<void> {
+    this.logger.warn(`Deleting object ${key} from bucket ${this.bucketName}`);
+    await this.client.send(
+      new DeleteObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
       }),
     );
   }

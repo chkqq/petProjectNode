@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Transactional } from 'typeorm-transactional';
+import { runOnTransactionCommit, Transactional } from 'typeorm-transactional';
 import * as bcrypt from 'bcryptjs';
 
 import { ActiveUserResponseDto } from './dto/active-user-response.dto';
@@ -81,6 +81,15 @@ export class UsersService {
 
   findByLoginWithPassword(login: string): Promise<User | null> {
     return this.usersRepository.findByLoginWithPassword(login);
+  }
+
+  async lockByIdOrFailForUpdate(id: string): Promise<User> {
+    const user = await this.usersRepository.findByIdForUpdate(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
   }
 
   async findByIdOrFail(id: string): Promise<UserResponseDto> {
@@ -286,8 +295,7 @@ export class UsersService {
 
     await this.usersRepository.updateBalance(sender.id, nextSenderBalance);
     await this.usersRepository.updateBalance(receiver.id, nextReceiverBalance);
-    await this.invalidateUsersCache(sender.id);
-    await this.invalidateUsersCache(receiver.id);
+    this.invalidateUsersCacheAfterCommit([sender.id, receiver.id]);
 
     this.logger.log(
       `Transfer completed: ${sender.id}=${nextSenderBalance}, ${receiver.id}=${nextReceiverBalance}`,
@@ -310,7 +318,7 @@ export class UsersService {
   async resetAllBalances(): Promise<ResetBalancesResult> {
     this.logger.warn('Resetting balances for all users');
     const updatedUsers = await this.usersRepository.resetAllBalances();
-    await this.invalidateUsersCache();
+    this.invalidateUsersCacheAfterCommit();
     this.logger.warn(`Balances were reset for ${updatedUsers} users`);
     return { updatedUsers };
   }
@@ -319,10 +327,27 @@ export class UsersService {
     return this.configService.get<number>('REDIS_CACHE_TTL_SECONDS', 30);
   }
 
-  private async invalidateUsersCache(userId?: string): Promise<void> {
+  private invalidateUsersCacheAfterCommit(userIds?: string | string[]): void {
+    runOnTransactionCommit(() => {
+      void this.invalidateUsersCache(userIds).catch((error: unknown) => {
+        this.logger.warn(
+          `Cache invalidation after commit failed: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`,
+        );
+      });
+    });
+  }
+
+  private async invalidateUsersCache(userIds?: string | string[]): Promise<void> {
     await this.redisService.deleteByPattern('users:all:*');
-    if (userId) {
-      await this.redisService.deleteByPattern(`users:one:${userId}`);
+    if (userIds) {
+      const normalizedUserIds = Array.isArray(userIds) ? userIds : [userIds];
+      await Promise.all(
+        [...new Set(normalizedUserIds)].map((userId) =>
+          this.redisService.deleteByPattern(`users:one:${userId}`),
+        ),
+      );
     } else {
       await this.redisService.deleteByPattern('users:one:*');
     }

@@ -7,9 +7,10 @@ import { Avatar } from './entities/avatar.entity';
 import { TypeOrmAvatarsRepository } from './repositories/typeorm-avatars.repository';
 import { AVATARS_REPOSITORY } from './repositories/avatars.repository.port';
 import { S3Module } from '../providers/s3/s3.module';
+import { UsersModule } from '../users/users.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Avatar]), S3Module],
+  imports: [TypeOrmModule.forFeature([Avatar]), S3Module, UsersModule],
   controllers: [AvatarsController],
   providers: [
     AvatarsService,
