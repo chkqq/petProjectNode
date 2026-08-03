@@ -10,7 +10,7 @@ export function PasswordRules({ password }: PasswordRulesProps) {
   return (
     <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
       <p className="mb-3 text-sm font-semibold text-slate-300">
-        Требования backend к паролю:
+        Backend password requirements:
       </p>
       <div className="flex flex-wrap gap-2">
         {checks.map((check) => (
@@ -22,7 +22,7 @@ export function PasswordRules({ password }: PasswordRulesProps) {
                 : 'bg-white/5 text-slate-400 ring-1 ring-white/10'
             }`}
           >
-            {check.passed ? '✓' : '•'} {check.label}
+            {check.passed ? '[x]' : '[ ]'} {check.label}
           </span>
         ))}
       </div>

@@ -3,10 +3,7 @@ import { ConfigService } from '@nestjs/config';
 
 import { UserResponseDto } from './dto/user-response.dto';
 import { User } from './entities/user.entity';
-import {
-  USERS_REPOSITORY,
-  UsersRepositoryPort,
-} from './repositories/users.repository.port';
+import { UsersRepositoryPort } from './repositories/users.repository.port';
 import { UsersService } from './users.service';
 
 describe('UsersService', () => {
@@ -20,6 +17,7 @@ describe('UsersService', () => {
     passwordHash: 'hash',
     refreshTokenHash: null,
     refreshTokenVersion: 0,
+    balance: '0.00',
     age: 23,
     about: 'NestJS enjoyer',
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -37,7 +35,11 @@ describe('UsersService', () => {
       findByLoginWithPassword: jest.fn(),
       findByEmail: jest.fn(),
       findAll: jest.fn(),
+      findActiveUsers: jest.fn(),
+      findByIdForUpdate: jest.fn(),
       update: jest.fn(),
+      updateBalance: jest.fn(),
+      resetAllBalances: jest.fn(),
       updateRefreshTokenHash: jest.fn(),
       updateRefreshTokenState: jest.fn(),
       softDelete: jest.fn(),
@@ -49,7 +51,21 @@ describe('UsersService', () => {
       ),
     } as unknown as ConfigService;
 
-    service = new UsersService(repository, configService);
+    const redisService = {
+      getJson: jest.fn(async () => null),
+      setJson: jest.fn(),
+      deleteByPattern: jest.fn(),
+    };
+    const s3Service = {
+      getPublicUrl: jest.fn((fileName: string) => `http://localhost/${fileName}`),
+    };
+
+    service = new UsersService(
+      repository,
+      configService,
+      redisService as never,
+      s3Service as never,
+    );
   });
 
   it('uses repository to create a user', async () => {
@@ -96,6 +112,18 @@ describe('UsersService', () => {
     await expect(
       service.updateMe(user.id, { login: 'occupied' }),
     ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('revokes refresh token when password changes', async () => {
+    repository.findById.mockResolvedValue(user);
+    repository.update.mockResolvedValue({ ...user, passwordHash: 'new-hash' });
+
+    await service.updateMe(user.id, { password: 'NewStrongPass123!' });
+
+    expect(repository.update).toHaveBeenCalledWith(
+      user.id,
+      expect.objectContaining({ refreshTokenHash: null }),
+    );
   });
 
   it('soft deletes user and clears refresh token', async () => {

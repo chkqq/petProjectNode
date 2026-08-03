@@ -19,12 +19,11 @@ export function DemoHeader({
           Pet Project Node
         </p>
         <h1 className="mt-3 text-4xl font-black tracking-tight text-white md:text-5xl">
-          Demo frontend для NestJS REST API
+          Demo frontend for NestJS REST API
         </h1>
         <p className="mt-4 max-w-3xl text-base leading-7 text-slate-300">
-          Здесь можно показать регистрацию, логин, автообновление access token
-          через refresh token, CRUD профиля, soft-delete и список пользователей
-          с пагинацией.
+          Show register, login, access token refresh, profile CRUD, avatars,
+          cached users, balance transfer, soft-delete and background jobs.
         </p>
       </div>
 
@@ -32,7 +31,7 @@ export function DemoHeader({
         <div className="space-y-3">
           <StatusLine label="Access token" value={accessTokenStatus} />
           <StatusLine label="Refresh token" value={refreshTokenStatus} />
-          <StatusLine label="Auth security" value={securityStatus} />
+          <StatusLine label="Security" value={securityStatus} />
         </div>
       </Card>
     </section>

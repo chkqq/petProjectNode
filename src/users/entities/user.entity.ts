@@ -4,13 +4,23 @@ import {
   DeleteDateColumn,
   Entity,
   Index,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
+import { Avatar } from '../../avatars/entities/avatar.entity';
+
 @Entity('users')
-@Index('idx_users_login_unique', ['login'], { unique: true })
-@Index('idx_users_email_unique', ['email'], { unique: true })
+@Index('idx_users_login_unique_active', ['login'], {
+  unique: true,
+  where: '"deleted_at" IS NULL',
+})
+@Index('idx_users_email_unique_active', ['email'], {
+  unique: true,
+  where: '"deleted_at" IS NULL',
+})
+@Index('idx_users_age', ['age'])
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -31,6 +41,14 @@ export class User {
   about: string | null;
 
   @Column({
+    type: 'numeric',
+    precision: 12,
+    scale: 2,
+    default: '0.00',
+  })
+  balance: string;
+
+  @Column({
     name: 'refresh_token_hash',
     type: 'varchar',
     length: 255,
@@ -45,6 +63,9 @@ export class User {
     default: 0,
   })
   refreshTokenVersion: number;
+
+  @OneToMany(() => Avatar, (avatar) => avatar.user)
+  avatars?: Avatar[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

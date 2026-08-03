@@ -1,12 +1,12 @@
 import { type FormEvent, type ReactNode } from 'react';
 
+import type { AuthMode, UserFormState } from '../../../features/user-form/model/types';
 import { passwordRules } from '../../../shared/lib/password';
 import { Button } from '../../../shared/ui/Button';
 import { Card } from '../../../shared/ui/Card';
 import { PasswordRules } from '../../../shared/ui/PasswordRules';
 import { TextArea } from '../../../shared/ui/TextArea';
 import { TextField } from '../../../shared/ui/TextField';
-import type { AuthMode, UserFormState } from '../../../features/user-form/model/types';
 
 interface AuthPanelProps {
   mode: AuthMode;
@@ -29,16 +29,16 @@ export function AuthPanel({
     <Card>
       <div className="mb-6 flex gap-2 rounded-2xl bg-slate-950/70 p-1">
         <TabButton active={mode === 'register'} onClick={() => onModeChange('register')}>
-          Регистрация
+          Register
         </TabButton>
         <TabButton active={mode === 'login'} onClick={() => onModeChange('login')}>
-          Логин
+          Login
         </TabButton>
       </div>
 
       <form className="space-y-4" onSubmit={onSubmit}>
         <TextField
-          label="Логин"
+          label="Login"
           value={form.login}
           onChange={(value) => onFieldChange('login', value)}
         />
@@ -51,20 +51,20 @@ export function AuthPanel({
               onChange={(value) => onFieldChange('email', value)}
             />
             <TextField
-              label="Возраст"
+              label="Age"
               type="number"
               value={form.age}
               onChange={(value) => onFieldChange('age', value)}
             />
             <TextArea
-              label="О себе"
+              label="About"
               value={form.about}
               onChange={(value) => onFieldChange('about', value)}
             />
           </>
         )}
         <TextField
-          label="Пароль"
+          label="Password"
           type="password"
           value={form.password}
           onChange={(value) => onFieldChange('password', value)}
@@ -72,12 +72,12 @@ export function AuthPanel({
         {mode === 'register' && <PasswordRules password={form.password} />}
 
         <Button type="submit" disabled={loading}>
-          {mode === 'register' ? 'Создать пользователя' : 'Войти'}
+          {mode === 'register' ? 'Create user' : 'Sign in'}
         </Button>
 
         {mode === 'register' && (
           <p className="text-xs text-slate-400">
-            Правила: {passwordRules.join(', ')}.
+            Rules: {passwordRules.join(', ')}.
           </p>
         )}
       </form>
