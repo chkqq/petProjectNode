@@ -54,6 +54,7 @@ export function validateEnv(config: RawEnv): RawEnv {
   return {
     ...config,
     PORT: asInteger(config, 'PORT', 3000),
+    NOTIFICATION_PORT: asInteger(config, 'NOTIFICATION_PORT', 3001),
     API_PREFIX: asString(config, 'API_PREFIX', 'api'),
     DB_HOST: asString(config, 'DB_HOST', 'localhost'),
     DB_PORT: asInteger(config, 'DB_PORT', 5432),
@@ -89,6 +90,23 @@ export function validateEnv(config: RawEnv): RawEnv {
       config,
       'BALANCE_RESET_REPEAT_MS',
       600000,
+    ),
+    KAFKA_BROKERS: asString(config, 'KAFKA_BROKERS', 'localhost:9092'),
+    KAFKA_CLIENT_ID: asString(config, 'KAFKA_CLIENT_ID', 'user-service'),
+    KAFKA_NOTIFICATION_CLIENT_ID: asString(
+      config,
+      'KAFKA_NOTIFICATION_CLIENT_ID',
+      'notification-service',
+    ),
+    KAFKA_NOTIFICATION_GROUP_ID: asString(
+      config,
+      'KAFKA_NOTIFICATION_GROUP_ID',
+      'notification-service-consumer',
+    ),
+    MONGO_URI: asString(
+      config,
+      'MONGO_URI',
+      'mongodb://localhost:27017/pet_project_notifications',
     ),
   };
 }

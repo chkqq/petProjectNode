@@ -73,3 +73,22 @@ export interface BalanceResetResponse {
   message: string;
   jobId: string;
 }
+
+export interface BalanceTransferredEvent {
+  eventId: string;
+  fromUserId: string;
+  toUserId: string;
+  amount: string;
+  fromBalance: string;
+  toBalance: string;
+  occurredAt: string;
+}
+
+export type NotificationType = 'test.notification' | 'balance.transferred';
+
+export interface NotificationPayload {
+  type: NotificationType;
+  message: string;
+  data: BalanceTransferredEvent | { message: string };
+  occurredAt: string;
+}

@@ -1,15 +1,24 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 
 import type { User } from '../../../entities/user/model/types';
 import type { AuthMode, UserFormState } from '../../../features/user-form/model/types';
 import { api, clearTokens, getAccessToken, getRefreshToken } from '../../../shared/api/client';
-import type { ActiveUser, Avatar } from '../../../shared/api/types';
+import {
+  createNotificationSocket,
+  type NotificationSocket,
+} from '../../../shared/api/notification-socket';
+import type {
+  ActiveUser,
+  Avatar,
+  NotificationPayload,
+} from '../../../shared/api/types';
 import { assertStrongPassword } from '../../../shared/lib/password';
 import { ActiveUsersPanel } from '../../../widgets/active-users-panel/ui/ActiveUsersPanel';
 import { AuthPanel } from '../../../widgets/auth-panel/ui/AuthPanel';
 import { AvatarsPanel } from '../../../widgets/avatars-panel/ui/AvatarsPanel';
 import { BalancePanel } from '../../../widgets/balance-panel/ui/BalancePanel';
 import { DemoHeader } from '../../../widgets/demo-header/ui/DemoHeader';
+import { NotificationsPanel } from '../../../widgets/notifications-panel/ui/NotificationsPanel';
 import { ProfilePanel } from '../../../widgets/profile-panel/ui/ProfilePanel';
 import { UsersPanel } from '../../../widgets/users-panel/ui/UsersPanel';
 
@@ -29,6 +38,8 @@ export function DemoPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [avatars, setAvatars] = useState<Avatar[]>([]);
   const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);
+  const [notifications, setNotifications] = useState<NotificationPayload[]>([]);
+  const [notificationStatus, setNotificationStatus] = useState('Disconnected.');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loginFilter, setLoginFilter] = useState('');
@@ -39,6 +50,7 @@ export function DemoPage() {
   const [status, setStatus] = useState('Ready to demo the API.');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const notificationSocketRef = useRef<NotificationSocket | null>(null);
 
   const isAuthorized = useMemo(() => Boolean(me && getAccessToken()), [me]);
 
@@ -60,6 +72,45 @@ export function DemoPage() {
       });
     }
   }, [me]);
+
+  useEffect(() => {
+    const token = getAccessToken();
+    if (!me || !token) {
+      notificationSocketRef.current?.disconnect();
+      notificationSocketRef.current = null;
+      setNotificationStatus('Disconnected.');
+      return;
+    }
+
+    const socket = createNotificationSocket(token);
+    notificationSocketRef.current = socket;
+    setNotificationStatus('Connecting...');
+
+    socket.on('connect', () => {
+      setNotificationStatus(`Connected. Socket id: ${socket.id}`);
+    });
+    socket.on('disconnect', (reason) => {
+      setNotificationStatus(`Disconnected: ${reason}`);
+    });
+    socket.on('connect_error', (socketError) => {
+      setNotificationStatus(`Connection error: ${socketError.message}`);
+    });
+    socket.on('pong', (payload) => {
+      setStatus(`Socket pong: ${payload.message}`);
+    });
+    socket.on('notification', (payload) => {
+      setNotifications((current) => [payload, ...current].slice(0, 20));
+      setStatus(`Realtime notification received: ${payload.message}`);
+    });
+    socket.connect();
+
+    return () => {
+      socket.disconnect();
+      if (notificationSocketRef.current === socket) {
+        notificationSocketRef.current = null;
+      }
+    };
+  }, [me?.id]);
 
   async function runAction(action: () => Promise<void>) {
     setLoading(true);
@@ -189,6 +240,7 @@ export function DemoPage() {
       setUsers([]);
       setAvatars([]);
       setActiveUsers([]);
+      setNotifications([]);
       setStatus('Logged out, tokens removed from localStorage.');
     });
   }
@@ -209,6 +261,7 @@ export function DemoPage() {
       setUsers([]);
       setAvatars([]);
       setActiveUsers([]);
+      setNotifications([]);
       setStatus('Profile soft-deleted, local tokens cleared.');
     });
   }
@@ -246,6 +299,26 @@ export function DemoPage() {
     await runAction(async () => {
       const response = await api.resetBalances();
       setStatus(`${response.message}. Job id: ${response.jobId}.`);
+    });
+  }
+
+  function handleSocketPing() {
+    notificationSocketRef.current?.emit('ping', {
+      message: `hello from ${me?.login ?? 'frontend'}`,
+    });
+  }
+
+  async function handleSendTestNotification() {
+    await runAction(async () => {
+      if (!me) {
+        throw new Error('Login first');
+      }
+
+      const response = await api.sendTestNotification({
+        userId: me.id,
+        message: `Manual test notification for ${me.login}`,
+      });
+      setStatus(response.message);
     });
   }
 
@@ -324,6 +397,17 @@ export function DemoPage() {
           onMinAgeChange={setActiveMinAge}
           onMaxAgeChange={setActiveMaxAge}
           onLoad={loadActiveUsers}
+        />
+
+        <NotificationsPanel
+          userId={me?.id}
+          notifications={notifications}
+          status={notificationStatus}
+          loading={loading}
+          isAuthorized={isAuthorized}
+          onPing={handleSocketPing}
+          onSendTestNotification={handleSendTestNotification}
+          onClear={() => setNotifications([])}
         />
 
         {(status || error) && (

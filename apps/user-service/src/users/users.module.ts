@@ -6,11 +6,17 @@ import { TypeOrmUsersRepository } from './repositories/typeorm-users.repository'
 import { USERS_REPOSITORY } from './repositories/users.repository.port';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
+import { BalanceNotificationsModule } from '../notifications/balance-notifications.module';
 import { RedisModule } from '../providers/redis/redis.module';
 import { S3Module } from '../providers/s3/s3.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User]), RedisModule, S3Module],
+  imports: [
+    TypeOrmModule.forFeature([User]),
+    RedisModule,
+    S3Module,
+    BalanceNotificationsModule,
+  ],
   controllers: [UsersController],
   providers: [
     UsersService,
