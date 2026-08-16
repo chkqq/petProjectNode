@@ -134,9 +134,3 @@ Kafka:
 - Notification Service consumes Kafka events, sends Socket.io notifications to both users and stores records in MongoDB.
 - Balance reset is queued through Bull and also scheduled every 10 minutes.
 - Services access the database through repository ports.
-
-## Docs
-
-- `docs/homework-3-monorepo-notifications.md`
-- `docs/homework-3-detailed-ru.md`
-- `docs/homework-3-study-questions.md`
