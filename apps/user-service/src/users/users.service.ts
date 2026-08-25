@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { randomUUID } from 'crypto';
 import { runOnTransactionCommit, Transactional } from 'typeorm-transactional';
 import * as bcrypt from 'bcryptjs';
 
@@ -21,15 +22,17 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { User } from './entities/user.entity';
 import {
+  BalanceTransferredEvent,
+  centsToMoney,
+  moneyToCents,
+  normalizeMoneyAmount,
+} from '@app/common';
+import {
   CreateUserCommand,
   USERS_REPOSITORY,
   UsersRepositoryPort,
 } from './repositories/users.repository.port';
-import {
-  centsToMoney,
-  moneyToCents,
-  normalizeMoneyAmount,
-} from '../common/utils/money';
+import { BalanceNotificationsProducerService } from '../notifications/balance-notifications-producer.service';
 import { RedisService } from '../providers/redis/redis.service';
 import { S3Service } from '../providers/s3/s3.service';
 
@@ -53,6 +56,7 @@ export class UsersService {
     private readonly configService: ConfigService,
     private readonly redisService: RedisService,
     private readonly s3Service: S3Service,
+    private readonly balanceNotificationsProducer: BalanceNotificationsProducerService,
   ) {}
 
   async create(command: CreateUserCommand): Promise<User> {
@@ -296,6 +300,15 @@ export class UsersService {
     await this.usersRepository.updateBalance(sender.id, nextSenderBalance);
     await this.usersRepository.updateBalance(receiver.id, nextReceiverBalance);
     this.invalidateUsersCacheAfterCommit([sender.id, receiver.id]);
+    this.publishBalanceTransferredAfterCommit({
+      eventId: randomUUID(),
+      fromUserId: sender.id,
+      toUserId: receiver.id,
+      amount: normalizedAmount,
+      fromBalance: nextSenderBalance,
+      toBalance: nextReceiverBalance,
+      occurredAt: new Date().toISOString(),
+    });
 
     this.logger.log(
       `Transfer completed: ${sender.id}=${nextSenderBalance}, ${receiver.id}=${nextReceiverBalance}`,
@@ -336,6 +349,22 @@ export class UsersService {
           }`,
         );
       });
+    });
+  }
+
+  private publishBalanceTransferredAfterCommit(
+    event: BalanceTransferredEvent,
+  ): void {
+    runOnTransactionCommit(() => {
+      void this.balanceNotificationsProducer
+        .emitBalanceTransferred(event)
+        .catch((error: unknown) => {
+          this.logger.warn(
+            `Kafka publish after commit failed: ${
+              error instanceof Error ? error.message : 'Unknown error'
+            }`,
+          );
+        });
     });
   }
 

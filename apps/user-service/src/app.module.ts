@@ -11,7 +11,7 @@ import { AvatarsModule } from './avatars/avatars.module';
 import { BalanceResetModule } from './balance-reset/balance-reset.module';
 import { BalancesModule } from './balances/balances.module';
 import { AuthModule } from './auth/auth.module';
-import { validateEnv } from './config/env.validation';
+import { validateEnv } from '@app/common';
 import { UsePartialUniqueIndexesForUsers1740000000000 } from './database/migrations/1740000000000-UsePartialUniqueIndexesForUsers';
 import { AddAvatarsAndBalances1730000000000 } from './database/migrations/1730000000000-AddAvatarsAndBalances';
 import { InitialUsers1720000000000 } from './database/migrations/1720000000000-InitialUsers';

@@ -13,6 +13,8 @@ import type {
 import type { User } from '../../entities/user/model/types';
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api';
+const NOTIFICATION_API_URL =
+  import.meta.env.VITE_NOTIFICATION_API_URL ?? 'http://localhost:3001';
 const ACCESS_TOKEN_KEY = 'petProjectNode.accessToken';
 const REFRESH_TOKEN_KEY = 'petProjectNode.refreshToken';
 
@@ -199,5 +201,18 @@ export const api = {
   resetBalances: () =>
     apiFetch<BalanceResetResponse>('/balance-reset', {
       method: 'POST',
+    }),
+
+  sendTestNotification: (payload: { userId: string; message: string }) =>
+    fetch(`${NOTIFICATION_API_URL}/notifications/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).then(async (response) => {
+      if (!response.ok) {
+        throw new Error(await parseError(response));
+      }
+
+      return response.json() as Promise<{ message: string }>;
     }),
 };

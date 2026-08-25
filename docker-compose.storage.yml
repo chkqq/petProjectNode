@@ -13,5 +13,70 @@ services:
       timeout: 5s
       retries: 5
 
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: pet_project_node_kafka
+    hostname: kafka
+    restart: unless-stopped
+    ports:
+      - '9092:9092'
+      - '29092:29092'
+    environment:
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENERS: EXTERNAL://0.0.0.0:9092,INTERNAL://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093
+      KAFKA_ADVERTISED_LISTENERS: EXTERNAL://localhost:9092,INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: EXTERNAL:PLAINTEXT,INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      CLUSTER_ID: 'q1Sh-9_ISia_zwGINzRvyQ'
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: pet_project_node_kafka_ui
+    restart: unless-stopped
+    depends_on:
+      - kafka
+    ports:
+      - '8080:8080'
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+
+  kafka-init:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: pet_project_node_kafka_init
+    depends_on:
+      - kafka
+    command:
+      - /bin/bash
+      - -c
+      - |
+        for i in {1..30}; do
+          kafka-topics --bootstrap-server kafka:29092 --list && break
+          sleep 2
+        done
+        kafka-topics --bootstrap-server kafka:29092 \
+          --create \
+          --if-not-exists \
+          --topic balance.transferred \
+          --partitions 1 \
+          --replication-factor 1
+
+  mongo:
+    image: mongo:7
+    container_name: pet_project_node_mongo
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
+
 volumes:
   redis_data:
+  mongo_data:

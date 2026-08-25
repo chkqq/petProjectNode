@@ -1,6 +1,6 @@
 # Pet Project Node API
 
-NestJS REST API for user profiles, JWT auth, PostgreSQL, MinIO avatars, Redis cache, Bull jobs and balance transfers.
+NestJS monorepo with user-service, notification-service, JWT auth, PostgreSQL, MinIO avatars, Redis cache, Bull jobs, Kafka, Socket.io and MongoDB notification history.
 
 ## Stack
 
@@ -12,8 +12,17 @@ NestJS REST API for user profiles, JWT auth, PostgreSQL, MinIO avatars, Redis ca
 - MinIO + S3 SDK
 - Redis
 - Bull
+- Kafka
+- Socket.io
+- MongoDB + Mongoose
 - ESLint + Husky + lint-staged
 - React + TypeScript + Tailwind demo frontend
+
+## Monorepo projects
+
+- `apps/user-service` - HTTP REST API from homework 1 and 2.
+- `apps/notification-service` - WebSocket + Kafka consumer + MongoDB notification storage.
+- `libs/common` - shared filter, money utils and Kafka event contracts.
 
 ## Quick start
 
@@ -23,7 +32,13 @@ npm install
 npm run frontend:install
 npm run db:up
 npm run migration:run
-npm run start:dev
+npm run start:dev:user-service
+```
+
+Notification service:
+
+```bash
+npm run start:dev:notification-service
 ```
 
 Frontend:
@@ -36,8 +51,10 @@ URLs:
 
 - API: `http://localhost:3000/api`
 - Swagger: `http://localhost:3000/docs`
+- Notification HTTP + WebSocket: `http://localhost:3001`
 - Frontend: `http://localhost:5173`
 - MinIO console: `http://localhost:9001`
+- Kafka UI: `http://localhost:8080`
 
 MinIO dev credentials:
 
@@ -56,6 +73,10 @@ npm run lint
 npm run lint:fix
 npm run lint:watch
 npm run build
+npm run build:user-service
+npm run build:notification-service
+npm run start:dev:user-service
+npm run start:dev:notification-service
 npm test
 npm run test:e2e
 npm run frontend:build
@@ -90,6 +111,16 @@ Balances:
 - `POST /api/balances/transfer`
 - `POST /api/balance-reset`
 
+Notification service:
+
+- `POST /notifications/send`
+- Socket.io event from client: `ping`
+- Socket.io event from server: `notification`
+
+Kafka:
+
+- topic: `balance.transferred`
+
 ## Notes
 
 - Password must contain at least 8 characters, one lowercase letter, one uppercase letter, one number and one special character.
@@ -99,11 +130,7 @@ Balances:
 - Changing password revokes the current refresh session.
 - `GET /profile` and `GET /profile/:id` are cached in Redis for 30 seconds.
 - Balance transfer uses a DB transaction.
+- Successful balance transfer publishes Kafka event after transaction commit.
+- Notification Service consumes Kafka events, sends Socket.io notifications to both users and stores records in MongoDB.
 - Balance reset is queued through Bull and also scheduled every 10 minutes.
 - Services access the database through repository ports.
-
-## Docs
-
-- `docs/mvp-2-backend-guide.md`
-- `docs/mvp-2-code-walkthrough.md`
-- `docs/mvp-2-questions.md`

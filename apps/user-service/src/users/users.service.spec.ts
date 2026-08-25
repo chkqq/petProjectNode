@@ -59,12 +59,16 @@ describe('UsersService', () => {
     const s3Service = {
       getPublicUrl: jest.fn((fileName: string) => `http://localhost/${fileName}`),
     };
+    const balanceNotificationsProducer = {
+      emitBalanceTransferred: jest.fn(),
+    };
 
     service = new UsersService(
       repository,
       configService,
       redisService as never,
       s3Service as never,
+      balanceNotificationsProducer as never,
     );
   });
 

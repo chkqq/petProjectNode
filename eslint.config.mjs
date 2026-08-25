@@ -17,7 +17,7 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   eslintConfigPrettier,
   {
-    files: ['src/**/*.ts', 'test/**/*.ts'],
+    files: ['apps/**/*.ts', 'libs/**/*.ts'],
     languageOptions: {
       globals: {
         ...globals.node,
